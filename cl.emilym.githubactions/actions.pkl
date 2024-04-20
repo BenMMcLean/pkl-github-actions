@@ -51,8 +51,8 @@ class Job {
     `continue-on-error`: Boolean?
     container: Container?
     services: Mapping<String, ContainerConfig>?
-    uses: String?
-    with: Mapping<String, Any>?
+    uses: String?((this != null).implies(steps == null) && (steps != null).implies(this == null))
+    with: Mapping<String, Any>?((this != null).implies(uses != null))
     secrets: Mapping<String, String>
     steps: List<Step>?
 }
