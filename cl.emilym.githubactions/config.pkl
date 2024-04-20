@@ -1,0 +1,62 @@
+import "triggers.pkl"
+
+name: String
+
+`run-name`: String?
+
+on: OnTrigger?
+
+jobs: Mapping<String(matches(validJobName)), Job>?
+
+permissions: Permission?
+
+local const validJobName = Regex("^[\\w_][\\w\\d_-]*")
+
+typealias Permission = Mapping<ScopePermission, List<ScopePermissionOptions>> | GlobalPermission
+typealias ScopePermission = "actions" | "checks" | "contents" | "deployments" | "discussions" | "id-token" | "issues" 
+    | "packages" | "pages" | "pull-requests" | "repository-projects" | "security-events" | "statuses"
+typealias ScopePermissionOptions = "read" | "write" | "none"
+typealias GlobalPermission = "read-all" | "write-all"
+
+class OnTrigger {
+    push: PushTriggerConfig?
+    pull_request: PullRequestTriggerConfig?
+}
+
+class PushTriggerConfig {
+    branches: List<String>
+}
+
+class PullRequestTriggerConfig {
+    branches: List<String>
+}
+
+class Job {
+    strategy: JobStrategy?
+    `runs-on`: String = "ubuntu-latest"
+    outputs: Mapping<String, String>?
+    `if`: String?
+    permissions: Permission?
+    needs: List<String>?
+    steps: List<Step>
+}
+
+class JobStrategy {
+    matrix: Mapping<String, Any>
+}
+
+abstract class Step {
+    id: String?
+    name: String?
+    `if`: String?
+}
+
+class ActionStep extends Step {
+    uses: String
+    with: Mapping<String, Any>?
+    env: Mapping<String, Any>?
+}
+
+class CommandStep extends Step {
+    run: String
+}
