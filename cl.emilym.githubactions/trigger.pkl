@@ -1,0 +1,166 @@
+import "constraints.pkl"
+
+local typealias crud = "created" | "edited" | "deleted"
+
+class On {
+    branch_protection_rule: BranchProtectionRule?
+    check_run: CheckRun?
+    check_suite: CheckSuite?
+    create: Create?
+    `delete`: Delete?
+    deployment: Deployment?
+    deployment_status: DeploymentStatus?
+    discussion: Discussion?
+    discussion_comment: DiscussionComment?
+    fork: Fork?
+    gollum: Gollum?
+    issue_comment: IssueComment?
+    issues: Issues?
+    label: Label?
+    merge_group: MergeGroup?
+    milestone: Milestone?
+    page_build: PageBuild?
+    project: Project?
+    project_card: ProjectCard?
+    project_column: ProjectColumn?
+    public: Public?
+    pull_request: PullRequest?
+    pull_request_review: PullRequestReview?
+    pull_request_review_comment: PullRequestReviewComment?
+    pull_request_target: PullRequestTarget?
+    push: Push?
+    registry_package: RegistryPackage?
+    release: Release?
+    repository_dispatch: RepositoryDispatch?
+    schedule: Schedule?
+    status: Status?
+    watch: Watch?
+    workflow_dispatch: WorkflowDispatch?
+    workflow_run: WorkflowRun?
+}
+
+class BranchProtectionRule {
+    types: List<crud>?
+}
+
+class CheckRun {
+    types: List<"created" | "rerequested" | "completed" | "requested_action">?
+}
+
+class CheckSuite {
+    types: List<"completed">?
+}
+
+class Create {}
+
+class Delete {}
+
+class Deployment {}
+
+class DeploymentStatus {}
+
+class Discussion {
+    types: List<crud | "transferred" | "pinned" | "unpinned" | "labeled" | "unlabeled" | "locked" | "unlocked" | "category_changed" | "answered" | "unanswered">?
+}
+
+class DiscussionComment {
+    types: List<crud>?
+}
+
+class Fork {}
+
+class Gollum {}
+
+class IssueComment {
+    types: List<crud>?
+}
+
+class Issues {
+    types: List<"opened" | "edited" | "deleted" | "transferred" | "pinned" | "unpinned" | "closed" | "reopened" | "assigned" | "unassigned" | "labeled" | "locked" | "unlocked" | "milestoned" | "demilestoned">?
+}
+
+class Label {
+    types: List<crud>?
+}
+
+class MergeGroup {
+    types: List<"checks_requested">?
+}
+
+class Milestone {
+    types: List<crud | "opened" | "closed">?
+}
+
+class PageBuild {}
+
+class Project {
+    types: List<crud | "closed" | "reopened">?
+}
+
+class ProjectCard {
+    types: List<crud | "moved" | "converted">?
+}
+
+class ProjectColumn {
+    types: List<crud | "moved">?
+}
+
+class Public {}
+
+class PullRequest {
+    types: List<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "locked" | "unlocked" | "enqueued" | "dequeued" | "milestoned" | "demilestoned" | "ready_for_review" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">?
+    branches: List<String>?
+    paths: List<String>?
+}
+
+class PullRequestReview {
+    types: List<"submitted" | "edited" | "dismissed">
+}
+
+class PullRequestReviewComment {
+    types: List<crud>
+}
+
+class PullRequestTarget {
+    types: List<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "ready_for_review" | "locked" | "unlocked" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">
+    branches: List<String>?
+    paths: List<String>?
+}
+
+class Push {
+    branches: List<String>?
+    paths: List<String>?
+    tags: List<String>?
+}
+
+class RegistryPackage {
+    types: List<"published" | "updated">?
+}
+
+class Release {
+    types: List<crud | "published" | "unpublished" | "released" | "prereleased">?
+}
+
+class RepositoryDispatch {
+    types: List<String>?
+}
+
+class Schedule {
+    cron: String(matches(constraints.cronMatcher))
+}
+
+class Status {}
+
+class Watch {
+    types: List<"started">?
+}
+
+class WorkflowDispatch {
+    inputs: Mapping<String, Any>?
+}
+
+class WorkflowRun {
+    types: List<"completed" | "requested" | "in_progress">?
+    workflows: List<String>?
+    branches: List<String>
+}
