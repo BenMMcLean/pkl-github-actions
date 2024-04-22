@@ -1,6 +1,6 @@
-import "../actions.pkl"
-import "../trigger.pkl"
-import "../common.pkl"
+import "../src/actions.pkl"
+import "../src/trigger.pkl"
+import "../src/common.pkl"
 
 hidden modules: List<String>
 hidden sonatypeEnabled = true
@@ -9,17 +9,17 @@ name = "Build"
 
 on = new trigger.On {
     push = new trigger.Push {
-        branches = List(
-            "main",
-            "develop",
+        branches = new Listing {
+            "main"
+            "develop"
             "release/**"
-        )
+        }
     }
     pull_request = new trigger.PullRequest {
-        branches = List(
-            "main",
+        branches = new Listing {
+            "main"
             "develop"
-        )
+        }
     }
 }
 
@@ -33,15 +33,15 @@ jobs = new Mapping {
             ["version"] = "${{ steps.gitversion.outputs.semVer }}"
             ["versionCode"] = "${{ steps.run_number.outputs.versionCode }}"
         }
-        steps = List(
-            common.checkout,
+        steps = new Listing {
+            common.checkout
             new actions.ActionStep {
                 name = "Install GitVersion"
                 uses = "gittools/actions/gitversion/setup@v0.9.6"
                 with = new Mapping {
                     ["versionSpec"] = "5.x"
                 }
-            },
+            }
             new actions.ActionStep {
                 name = "Use GitVersion"
                 id = "gitversion"
@@ -50,12 +50,12 @@ jobs = new Mapping {
                     ["useactionsFile"] = true
                     ["actionsFilePath"] = "./gitversion.yml"
                 }
-            },
+            }
             new actions.CommandStep {
                 name = "Display SemVer"
                 run = "echo \"SemVer: ${{ steps.gitversion.outputs.semVer }}\""
             }
-        )
+        }
     }
     ["build"] = new actions.Job {
         strategy = new actions.JobStrategy {
@@ -63,21 +63,23 @@ jobs = new Mapping {
                 ["module"] = modules
             }
         }
-        needs = List("version")
-        steps = List(
-            common.checkout,
-            common.setupJdk,
+        needs = new Listing {
+            "version"
+        }
+        steps = new Listing {
+            common.checkout
+            common.setupJdk
             common.gradle(
                 "Build", 
                 "${{ matrix.module }}:build",
                 new Mapping {
                     ["ORG_GRADLE_PROJECT_version"] = "${{ needs.version.outputs.version }}"
                 }
-            ),
+            )
             new actions.CommandStep {
                 name = "Rename AAR"
                 run = "mv ./${{ matrix.module }}/build/outputs/aar/${{ matrix.module }}-${{ needs.version.outputs.version }}.aar ./${{ matrix.module }}.aar"
-            },
+            }
             new actions.ActionStep {
                 uses = "actions/upload-artifact@master"
                 with = new Mapping {
@@ -85,10 +87,12 @@ jobs = new Mapping {
                     ["path"] = "./${{ matrix.module }}.aar"
                 }
             }
-        )
+        }
     }
     ["release"] = new actions.Job {
-        needs = List("version")
+        needs = new Listing {
+            "version"
+        }
         `if` = "github.event_name != 'pull_request'"
         permissions = new Mapping {
             ["contents"] = "write"
@@ -96,7 +100,7 @@ jobs = new Mapping {
         outputs = new Mapping {
             ["upload_url"] = "${{ steps.create_release.outputs.upload_url }}"
         }
-        steps = List(
+        steps = new Listing {
             new actions.ActionStep {
                 id = "create_release"
                 name = "Create Release"
@@ -111,7 +115,7 @@ jobs = new Mapping {
                     ["prerelease"] = "${{ github.ref != 'refs/heads/main' }}"
                 }
             }
-        )
+        }
     }
     ["publish-release"] = new actions.Job {
         strategy = new actions.JobStrategy {
@@ -119,15 +123,19 @@ jobs = new Mapping {
                 ["module"] = modules
             }
         }
-        needs = List("version", "release", "build")
-        steps = List(
+        needs = new Listing {
+            "version"
+            "release"
+            "build"
+        }
+        steps = new Listing {
             new actions.ActionStep {
                 uses = "actions/download-artifact@master"
                 with = new Mapping {
                     ["name"] = "${{ matrix.module }}-aar"
                     ["path"] = "./"
                 }
-            },
+            }
             new actions.ActionStep {
                 name = "Upload Artifact to Release"
                 uses = "actions/upload-release-asset@v1"
@@ -141,7 +149,7 @@ jobs = new Mapping {
                     ["asset_content_type"] = "application/zip"
                 }
             }
-        )  
+        }  
     }
     ["publish-sonatype"] = if(sonatypeEnabled) new actions.Job {
         strategy = new actions.JobStrategy {
@@ -152,10 +160,12 @@ jobs = new Mapping {
         permissions = new Mapping {
             ["contents"] = "read"
         }
-        needs = List("version")
-        steps = List(
-            common.checkout,
-            common.setupJdk,
+        needs = new Listing {
+            "version"
+        }
+        steps = new Listing {
+            common.checkout
+            common.setupJdk
             common.gradle(
                 "Build", 
                 """
@@ -173,6 +183,6 @@ jobs = new Mapping {
                     ["ORG_GRADLE_PROJECT_signingPassword"] = "${{ secrets.PGP_PASSPHRASE }}"
                 }
             )
-        )  
+        }  
     } else null
 }

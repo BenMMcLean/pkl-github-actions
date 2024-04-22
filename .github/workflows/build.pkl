@@ -23,9 +23,11 @@ local updateVersionFile = new ActionStep {
 name = "Build"
 on = new trigger.On {
     push = new trigger.Push {
-        branches = List(
-            "master", "main", "develop"
-        )
+        branches = new Listing {
+            "master" 
+            "main"
+            "develop"
+        }
     }
 }
 
@@ -35,22 +37,22 @@ jobs = new Mapping {
             ["current-version"] = "${{ env.CURRENT_VERSION }}"
             ["version"] = "${{ steps.gitversion.outputs.semVer }}"
         }
-        steps = List(
-            checkout,
+        steps = new Listing {
+            checkout
             new CommandStep {
                 name = "Get current Pkl version"
                 run = """
                 VER=$(cat .version)
                 echo "CURRENT_VERSION=$VER" >> $GITHUB_ENV
                 """
-            },
+            }
             new ActionStep {
                 name = "Install gitversion"
                 uses = "gittools/actions/gitversion/setup@v0.9.6"
                 with = new Mapping {
                     ["versionSpec"] = "5.x"
                 }
-            },
+            }
             new ActionStep {
                 id = "gitversion"
                 name = "Use gitversion"
@@ -59,18 +61,18 @@ jobs = new Mapping {
                     ["useConfigFile"] = true
                     ["configFilePath"] = "./gitversion.yml"
                 }
-            },
+            }
             new CommandStep {
                 name = "Display version"
                 run = "echo \"SemVer: ${{ steps.gitversion.outputs.semVer }}\""
             }
-        )
+        }
     }
     ["should-release"] = new Job {
         outputs = new Mapping {
             ["proceed"] = "${{ steps.release.outputs.proceed && github.event_name != 'pull_request' }}"
         }
-        steps = List(
+        steps = new Listing {
             new ActionStep {
                 id = "release"
                 uses = "phish108/release-check@1.0.15"
@@ -82,18 +84,19 @@ jobs = new Mapping {
                     """
                 }
             }
-        )
+        }
     }
     ["release"] = new Job {
-        needs = List(
-            "version", "should-release"
-        )
+        needs = new Listing {
+            "version"
+            "should-release"
+        }
         permissions = new Mapping {
             ["contents"] = "write"
         }
         `if` = "${{ needs.should-release.outputs.proceed }}"
-        steps = List(
-            checkout,
+        steps = new Listing {
+            checkout
             new ActionStep {
                 name = "Create Release"
                 uses = "actions/create-release@v1"
@@ -106,7 +109,7 @@ jobs = new Mapping {
                     ["draft"] = false
                     ["prerelease"] = "${{ github.ref == 'refs/heads/develop' }}"
                 }
-            },
+            }
             new ActionStep {
                 name = "Add package specific tag"
                 uses = "tvdias/github-tagger@v0.0.1"
@@ -115,17 +118,20 @@ jobs = new Mapping {
                     ["tag"] = "\(packageName)@${{ needs.version.outputs.version }}"
                 }
             }
-        )
+        }
     }
     ["version-update"] = new Job {
-        needs = List("version", "should-release")
+        needs = new Listing {
+            "version"
+            "should-release"
+        }
         permissions = new Mapping {
             ["contents"] = "write"
         }
         `if` = "${{ needs.should-release.outputs.proceed }}"
-        steps = List(
-            checkout,
-            updateVersionFile,
+        steps = new Listing {
+            checkout
+            updateVersionFile
             new ActionStep {
                 uses = "jacobtomlinson/gha-find-replace@v3"
                 with = new Mapping {
@@ -134,34 +140,37 @@ jobs = new Mapping {
                     ["regex"] = false
                     ["include"] = "README.md"
                 }
-            },
+            }
             new ActionStep {
                 uses = "stefanzweifel/git-auto-commit-action@v5"
                 with = new Mapping {
                     ["commit_message"] = "Update version in documentation from ${{ needs.version.outputs.current-version }} to ${{ needs.version.outputs.version }}"
                 }
             }
-        )
+        }
     }
     ["upload-project"] = new Job {
-        needs = List("version", "release")
+        needs = new Listing {
+            "version"
+            "release"
+        }
         permissions = new Mapping {
             ["contents"] = "write"
         }
-        steps = List(
-            checkout,
+        steps = new Listing {
+            checkout
             new ActionStep {
                 name = "Install Pkl"
                 uses = "pkl-community/setup-pkl@v0"
                 with = new Mapping {
                     ["pkl-version"] = "0.25.3"
                 }
-            },
-            updateVersionFile,
+            }
+            updateVersionFile
             new CommandStep {
                 name = "Package Pkl"
                 run = "pkl project package src"
-            },
+            }
             new CommandStep {
                 env = new Mapping {
                     ["GITHUB_TOKEN"] = "${{ secrets.GITHUB_TOKEN }}"
@@ -172,6 +181,6 @@ jobs = new Mapping {
                 gh release edit v${{ needs.version.outputs.version }} -t v${{ needs.version.outputs.version }}
                 """
             }
-        )
+        }
     }
 }

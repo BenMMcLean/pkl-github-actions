@@ -38,7 +38,7 @@ class Concurrency {
 class Job {
     name: String?
     permissions: Permission?
-    needs: List<String>?
+    needs: Listing<String>?
     `if`: String?
     `runs-on`: String = "ubuntu-latest"
     environment: (String | Environment)?
@@ -54,7 +54,7 @@ class Job {
     uses: String?((this == null).xor(steps == null))
     with: Mapping<String, Any>?((this != null).implies(uses != null))
     secrets: Mapping<String, String>?
-    steps: List<Step>?
+    steps: Listing<Step>?
 }
 
 class Environment {
@@ -74,9 +74,9 @@ class Container {
 class ContainerConfig {
     image: String
     env: Mapping<String, Any>?
-    ports: List<String>?
-    volumes: List<String>?
-    options: List<String>?
+    ports: Listing<String>?
+    volumes: Listing<String>?
+    options: Listing<String>?
     credentials: Credentials?
 }
 

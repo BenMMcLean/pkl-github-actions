@@ -40,15 +40,15 @@ class On {
 }
 
 class BranchProtectionRule {
-    types: List<crud>?
+    types: Listing<crud>?
 }
 
 class CheckRun {
-    types: List<"created" | "rerequested" | "completed" | "requested_action">?
+    types: Listing<"created" | "rerequested" | "completed" | "requested_action">?
 }
 
 class CheckSuite {
-    types: List<"completed">?
+    types: Listing<"completed">?
 }
 
 class Create {}
@@ -60,11 +60,11 @@ class Deployment {}
 class DeploymentStatus {}
 
 class Discussion {
-    types: List<crud | "transferred" | "pinned" | "unpinned" | "labeled" | "unlabeled" | "locked" | "unlocked" | "category_changed" | "answered" | "unanswered">?
+    types: Listing<crud | "transferred" | "pinned" | "unpinned" | "labeled" | "unlabeled" | "locked" | "unlocked" | "category_changed" | "answered" | "unanswered">?
 }
 
 class DiscussionComment {
-    types: List<crud>?
+    types: Listing<crud>?
 }
 
 class Fork {}
@@ -72,77 +72,77 @@ class Fork {}
 class Gollum {}
 
 class IssueComment {
-    types: List<crud>?
+    types: Listing<crud>?
 }
 
 class Issues {
-    types: List<"opened" | "edited" | "deleted" | "transferred" | "pinned" | "unpinned" | "closed" | "reopened" | "assigned" | "unassigned" | "labeled" | "locked" | "unlocked" | "milestoned" | "demilestoned">?
+    types: Listing<"opened" | "edited" | "deleted" | "transferred" | "pinned" | "unpinned" | "closed" | "reopened" | "assigned" | "unassigned" | "labeled" | "locked" | "unlocked" | "milestoned" | "demilestoned">?
 }
 
 class Label {
-    types: List<crud>?
+    types: Listing<crud>?
 }
 
 class MergeGroup {
-    types: List<"checks_requested">?
+    types: Listing<"checks_requested">?
 }
 
 class Milestone {
-    types: List<crud | "opened" | "closed">?
+    types: Listing<crud | "opened" | "closed">?
 }
 
 class PageBuild {}
 
 class Project {
-    types: List<crud | "closed" | "reopened">?
+    types: Listing<crud | "closed" | "reopened">?
 }
 
 class ProjectCard {
-    types: List<crud | "moved" | "converted">?
+    types: Listing<crud | "moved" | "converted">?
 }
 
 class ProjectColumn {
-    types: List<crud | "moved">?
+    types: Listing<crud | "moved">?
 }
 
 class Public {}
 
 class PullRequest {
-    types: List<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "locked" | "unlocked" | "enqueued" | "dequeued" | "milestoned" | "demilestoned" | "ready_for_review" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">?
-    branches: List<String>?
-    paths: List<String>?
+    types: Listing<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "locked" | "unlocked" | "enqueued" | "dequeued" | "milestoned" | "demilestoned" | "ready_for_review" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">?
+    branches: Listing<String>?
+    paths: Listing<String>?
 }
 
 class PullRequestReview {
-    types: List<"submitted" | "edited" | "dismissed">
+    types: Listing<"submitted" | "edited" | "dismissed">
 }
 
 class PullRequestReviewComment {
-    types: List<crud>
+    types: Listing<crud>
 }
 
 class PullRequestTarget {
-    types: List<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "ready_for_review" | "locked" | "unlocked" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">
-    branches: List<String>?
-    paths: List<String>?
+    types: Listing<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "ready_for_review" | "locked" | "unlocked" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">
+    branches: Listing<String>?
+    paths: Listing<String>?
 }
 
 class Push {
-    branches: List<String>?
-    paths: List<String>?
-    tags: List<String>?
+    branches: Listing<String>?
+    paths: Listing<String>?
+    tags: Listing<String>?
 }
 
 class RegistryPackage {
-    types: List<"published" | "updated">?
+    types: Listing<"published" | "updated">?
 }
 
 class Release {
-    types: List<crud | "published" | "unpublished" | "released" | "prereleased">?
+    types: Listing<crud | "published" | "unpublished" | "released" | "prereleased">?
 }
 
 class RepositoryDispatch {
-    types: List<String>?
+    types: Listing<String>?
 }
 
 class Schedule {
@@ -152,7 +152,7 @@ class Schedule {
 class Status {}
 
 class Watch {
-    types: List<"started">?
+    types: Listing<"started">?
 }
 
 class WorkflowDispatch {
@@ -160,7 +160,7 @@ class WorkflowDispatch {
 }
 
 class WorkflowRun {
-    types: List<"completed" | "requested" | "in_progress">?
-    workflows: List<String>?
-    branches: List<String>
+    types: Listing<"completed" | "requested" | "in_progress">?
+    workflows: Listing<String>?
+    branches: Listing<String>
 }
