@@ -1,0 +1,180 @@
+import "../actions.pkl"
+import "../trigger.pkl"
+import "../common.pkl"
+
+hidden modules: List<String>
+hidden sonatypeEnabled = true
+
+name = "Build"
+
+on = new trigger.On {
+    push = new trigger.Push {
+        branches = List(
+            "main",
+            "develop",
+            "release/**"
+        )
+    }
+    pull_request = new trigger.PullRequest {
+        branches = List(
+            "main",
+            "develop"
+        )
+    }
+}
+
+permissions = new Mapping {
+    ["contents"] = List(
+        "write"
+    )
+}
+
+jobs = new Mapping {
+    ["version"] = new actions.Job {
+        outputs = new Mapping {
+            ["version"] = "${{ steps.gitversion.outputs.semVer }}"
+            ["versionCode"] = "${{ steps.run_number.outputs.versionCode }}"
+        }
+        steps = List(
+            common.checkout,
+            new actions.ActionStep {
+                name = "Install GitVersion"
+                uses = "gittools/actions/gitversion/setup@v0.9.6"
+                with = new Mapping {
+                    ["versionSpec"] = "5.x"
+                }
+            },
+            new actions.ActionStep {
+                name = "Use GitVersion"
+                id = "gitversion"
+                uses = "gittools/actions/gitversion/execute@v0.9.6"
+                with = new Mapping {
+                    ["useactionsFile"] = true
+                    ["actionsFilePath"] = "./gitversion.yml"
+                }
+            },
+            new actions.CommandStep {
+                name = "Display SemVer"
+                run = "echo \"SemVer: ${{ steps.gitversion.outputs.semVer }}\""
+            }
+        )
+    }
+    ["build"] = new actions.Job {
+        strategy = new actions.JobStrategy {
+            matrix = new Mapping {
+                ["module"] = modules
+            }
+        }
+        needs = List("version")
+        steps = List(
+            common.checkout,
+            common.setupJdk,
+            common.gradle(
+                "Build", 
+                "${{ matrix.module }}:build",
+                new Mapping {
+                    ["ORG_GRADLE_PROJECT_version"] = "${{ needs.version.outputs.version }}"
+                }
+            ),
+            new actions.CommandStep {
+                name = "Rename AAR"
+                run = "mv ./${{ matrix.module }}/build/outputs/aar/${{ matrix.module }}-${{ needs.version.outputs.version }}.aar ./${{ matrix.module }}.aar"
+            },
+            new actions.ActionStep {
+                uses = "actions/upload-artifact@master"
+                with = new Mapping {
+                    ["name"] = "${{ matrix.module }}-aar"
+                    ["path"] = "./${{ matrix.module }}.aar"
+                }
+            }
+        )
+    }
+    ["release"] = new actions.Job {
+        needs = List("version")
+        `if` = "github.event_name != 'pull_request'"
+        permissions = new Mapping {
+            ["contents"] = List("write")
+        }
+        outputs = new Mapping {
+            ["upload_url"] = "${{ steps.create_release.outputs.upload_url }}"
+        }
+        steps = List(
+            new actions.ActionStep {
+                id = "create_release"
+                name = "Create Release"
+                uses = "actions/create-release@v1"
+                env = new Mapping {
+                    ["GITHUB_TOKEN"] = "${{ secrets.GITHUB_TOKEN }}"
+                }
+                with = new Mapping {
+                    ["tag_name"] = "v${{ needs.version.outputs.version }}"
+                    ["release_name"] = "Release ${{ needs.version.outputs.version }}"
+                    ["draft"] = false
+                    ["prerelease"] = "${{ github.ref != 'refs/heads/main' }}"
+                }
+            }
+        )
+    }
+    ["publish-release"] = new actions.Job {
+        strategy = new actions.JobStrategy {
+            matrix = new Mapping {
+                ["module"] = modules
+            }
+        }
+        needs = List("version", "release", "build")
+        steps = List(
+            new actions.ActionStep {
+                uses = "actions/download-artifact@master"
+                with = new Mapping {
+                    ["name"] = "${{ matrix.module }}-aar"
+                    ["path"] = "./"
+                }
+            },
+            new actions.ActionStep {
+                name = "Upload Artifact to Release"
+                uses = "actions/upload-release-asset@v1"
+                env = new Mapping {
+                    ["GITHUB_TOKEN"] = "${{ secrets.GITHUB_TOKEN }}"
+                }
+                with = new Mapping {
+                    ["upload_url"] = "${{ needs.release.outputs.upload_url }}"
+                    ["asset_path"] = "./${{ matrix.module }}.aar"
+                    ["asset_name"] = "${{ matrix.module }}-v${{ needs.version.outputs.version }}.aar"
+                    ["asset_content_type"] = "application/zip"
+                }
+            }
+        )  
+    }
+    ["publish-sonatype"] = if(sonatypeEnabled) new actions.Job {
+        strategy = new actions.JobStrategy {
+            matrix = new Mapping {
+                ["module"] = modules
+            }
+        }
+        permissions = new Mapping {
+            ["contents"] = List("read")
+        }
+        needs = List("version")
+        steps = List(
+            common.checkout,
+            common.setupJdk,
+            common.gradle(
+                "Build", 
+                """
+                -Pversion=${{ needs.version.outputs.version }} 
+                -Ppom.url="https://github.com/${{ github.repository }}" 
+                -Ppom.scm.connection="scm:git:git://github.com/${{ github.repository }}" 
+                -Ppom.scm.developerConnection="scm:git:ssh://github.com/${{ github.repository }}" 
+                -Ppom.scm.url="https://github.com/${{ github.repository }}" 
+                ${{ matrix.module }}:publishToCentralPortal --no-daemon
+                """,
+                new Mapping {
+                    ["ORG_GRADLE_PROJECT_sonatypePassword"] = "${{ secrets.SONATYPE_PASSWORD }}"
+                    ["ORG_GRADLE_PROJECT_sonatypeUsername"] = "${{ secrets.SONATYPE_USERNAME }}"
+                    ["ORG_GRADLE_PROJECT_signingKey"] = "${{ secrets.PGP_SECRET }}"
+                    ["ORG_GRADLE_PROJECT_signingPassword"] = "${{ secrets.PGP_PASSPHRASE }}"
+                }
+            )
+        )  
+    } else null
+}
