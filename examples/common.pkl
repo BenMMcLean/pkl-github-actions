@@ -1,4 +1,4 @@
-import "actions.pkl"
+import "../src/actions.pkl"
 
 checkout = new actions.ActionStep {
     uses = "actions/checkout@v3"

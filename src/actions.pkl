@@ -1,11 +1,12 @@
-import "trigger.pkl"
+open module actions
+
 import "constraints.pkl"
 
 name: String
 
 `run-name`: String?
 
-on: trigger.On?
+on: On?
 
 permissions: Permission?
 
@@ -99,4 +100,169 @@ class ActionStep extends Step {
 
 class CommandStep extends Step {
     run: String
+}
+
+local typealias crud = "created" | "edited" | "deleted"
+
+class On {
+    branch_protection_rule: BranchProtectionRule?
+    check_run: CheckRun?
+    check_suite: CheckSuite?
+    create: Create?
+    `delete`: Delete?
+    deployment: Deployment?
+    deployment_status: DeploymentStatus?
+    discussion: Discussion?
+    discussion_comment: DiscussionComment?
+    fork: Fork?
+    gollum: Gollum?
+    issue_comment: IssueComment?
+    issues: Issues?
+    label: Label?
+    merge_group: MergeGroup?
+    milestone: Milestone?
+    page_build: PageBuild?
+    project: Project?
+    project_card: ProjectCard?
+    project_column: ProjectColumn?
+    public: Public?
+    pull_request: PullRequest?
+    pull_request_review: PullRequestReview?
+    pull_request_review_comment: PullRequestReviewComment?
+    pull_request_target: PullRequestTarget?
+    push: Push?
+    registry_package: RegistryPackage?
+    release: Release?
+    repository_dispatch: RepositoryDispatch?
+    schedule: Schedule?
+    status: Status?
+    watch: Watch?
+    workflow_dispatch: WorkflowDispatch?
+    workflow_run: WorkflowRun?
+}
+
+class BranchProtectionRule {
+    types: Listing<crud>?
+}
+
+class CheckRun {
+    types: Listing<"created" | "rerequested" | "completed" | "requested_action">?
+}
+
+class CheckSuite {
+    types: Listing<"completed">?
+}
+
+class Create {}
+
+class Delete {}
+
+class Deployment {}
+
+class DeploymentStatus {}
+
+class Discussion {
+    types: Listing<crud | "transferred" | "pinned" | "unpinned" | "labeled" | "unlabeled" | "locked" | "unlocked" | "category_changed" | "answered" | "unanswered">?
+}
+
+class DiscussionComment {
+    types: Listing<crud>?
+}
+
+class Fork {}
+
+class Gollum {}
+
+class IssueComment {
+    types: Listing<crud>?
+}
+
+class Issues {
+    types: Listing<"opened" | "edited" | "deleted" | "transferred" | "pinned" | "unpinned" | "closed" | "reopened" | "assigned" | "unassigned" | "labeled" | "locked" | "unlocked" | "milestoned" | "demilestoned">?
+}
+
+class Label {
+    types: Listing<crud>?
+}
+
+class MergeGroup {
+    types: Listing<"checks_requested">?
+}
+
+class Milestone {
+    types: Listing<crud | "opened" | "closed">?
+}
+
+class PageBuild {}
+
+class Project {
+    types: Listing<crud | "closed" | "reopened">?
+}
+
+class ProjectCard {
+    types: Listing<crud | "moved" | "converted">?
+}
+
+class ProjectColumn {
+    types: Listing<crud | "moved">?
+}
+
+class Public {}
+
+class PullRequest {
+    types: Listing<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "locked" | "unlocked" | "enqueued" | "dequeued" | "milestoned" | "demilestoned" | "ready_for_review" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">?
+    branches: Listing<String>?
+    paths: Listing<String>?
+}
+
+class PullRequestReview {
+    types: Listing<"submitted" | "edited" | "dismissed">
+}
+
+class PullRequestReviewComment {
+    types: Listing<crud>
+}
+
+class PullRequestTarget {
+    types: Listing<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "ready_for_review" | "locked" | "unlocked" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">
+    branches: Listing<String>?
+    paths: Listing<String>?
+}
+
+class Push {
+    branches: Listing<String>?
+    paths: Listing<String>?
+    tags: Listing<String>?
+}
+
+class RegistryPackage {
+    types: Listing<"published" | "updated">?
+}
+
+class Release {
+    types: Listing<crud | "published" | "unpublished" | "released" | "prereleased">?
+}
+
+class RepositoryDispatch {
+    types: Listing<String>?
+}
+
+class Schedule {
+    cron: String(matches(constraints.cronMatcher))
+}
+
+class Status {}
+
+class Watch {
+    types: Listing<"started">?
+}
+
+class WorkflowDispatch {
+    inputs: Mapping<String, Any>?
+}
+
+class WorkflowRun {
+    types: Listing<"completed" | "requested" | "in_progress">?
+    workflows: Listing<String>?
+    branches: Listing<String>
 }

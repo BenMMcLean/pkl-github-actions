@@ -1,21 +1,20 @@
-import "../src/actions.pkl"
-import "../src/trigger.pkl"
-import "../src/common.pkl"
+extends "../src/actions.pkl"
+import "common.pkl"
 
 hidden modules: List<String>
 hidden sonatypeEnabled = true
 
 name = "Build"
 
-on = new trigger.On {
-    push = new trigger.Push {
+on = new On {
+    push = new Push {
         branches = new Listing {
             "main"
             "develop"
             "release/**"
         }
     }
-    pull_request = new trigger.PullRequest {
+    pull_request = new PullRequest {
         branches = new Listing {
             "main"
             "develop"
@@ -28,21 +27,21 @@ permissions = new Mapping {
 }
 
 jobs = new Mapping {
-    ["version"] = new actions.Job {
+    ["version"] = new Job {
         outputs = new Mapping {
             ["version"] = "${{ steps.gitversion.outputs.semVer }}"
             ["versionCode"] = "${{ steps.run_number.outputs.versionCode }}"
         }
         steps = new Listing {
             common.checkout
-            new actions.ActionStep {
+            new ActionStep {
                 name = "Install GitVersion"
                 uses = "gittools/actions/gitversion/setup@v0.9.6"
                 with = new Mapping {
                     ["versionSpec"] = "5.x"
                 }
             }
-            new actions.ActionStep {
+            new ActionStep {
                 name = "Use GitVersion"
                 id = "gitversion"
                 uses = "gittools/actions/gitversion/execute@v0.9.6"
@@ -51,14 +50,14 @@ jobs = new Mapping {
                     ["actionsFilePath"] = "./gitversion.yml"
                 }
             }
-            new actions.CommandStep {
+            new CommandStep {
                 name = "Display SemVer"
                 run = "echo \"SemVer: ${{ steps.gitversion.outputs.semVer }}\""
             }
         }
     }
-    ["build"] = new actions.Job {
-        strategy = new actions.JobStrategy {
+    ["build"] = new Job {
+        strategy = new JobStrategy {
             matrix = new Mapping {
                 ["module"] = modules
             }
@@ -76,11 +75,11 @@ jobs = new Mapping {
                     ["ORG_GRADLE_PROJECT_version"] = "${{ needs.version.outputs.version }}"
                 }
             )
-            new actions.CommandStep {
+            new CommandStep {
                 name = "Rename AAR"
                 run = "mv ./${{ matrix.module }}/build/outputs/aar/${{ matrix.module }}-${{ needs.version.outputs.version }}.aar ./${{ matrix.module }}.aar"
             }
-            new actions.ActionStep {
+            new ActionStep {
                 uses = "actions/upload-artifact@master"
                 with = new Mapping {
                     ["name"] = "${{ matrix.module }}-aar"
@@ -89,7 +88,7 @@ jobs = new Mapping {
             }
         }
     }
-    ["release"] = new actions.Job {
+    ["release"] = new Job {
         needs = new Listing {
             "version"
         }
@@ -101,7 +100,7 @@ jobs = new Mapping {
             ["upload_url"] = "${{ steps.create_release.outputs.upload_url }}"
         }
         steps = new Listing {
-            new actions.ActionStep {
+            new ActionStep {
                 id = "create_release"
                 name = "Create Release"
                 uses = "actions/create-release@v1"
@@ -117,8 +116,8 @@ jobs = new Mapping {
             }
         }
     }
-    ["publish-release"] = new actions.Job {
-        strategy = new actions.JobStrategy {
+    ["publish-release"] = new Job {
+        strategy = new JobStrategy {
             matrix = new Mapping {
                 ["module"] = modules
             }
@@ -129,14 +128,14 @@ jobs = new Mapping {
             "build"
         }
         steps = new Listing {
-            new actions.ActionStep {
+            new ActionStep {
                 uses = "actions/download-artifact@master"
                 with = new Mapping {
                     ["name"] = "${{ matrix.module }}-aar"
                     ["path"] = "./"
                 }
             }
-            new actions.ActionStep {
+            new ActionStep {
                 name = "Upload Artifact to Release"
                 uses = "actions/upload-release-asset@v1"
                 env = new Mapping {
@@ -151,8 +150,8 @@ jobs = new Mapping {
             }
         }  
     }
-    ["publish-sonatype"] = if(sonatypeEnabled) new actions.Job {
-        strategy = new actions.JobStrategy {
+    ["publish-sonatype"] = if(sonatypeEnabled) new Job {
+        strategy = new JobStrategy {
             matrix = new Mapping {
                 ["module"] = modules
             }

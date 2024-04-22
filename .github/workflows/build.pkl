@@ -1,5 +1,4 @@
 amends "../../src/actions.pkl"
-import "../../src/trigger.pkl"
 
 local packageName = "pkl-github-actions"
 
@@ -21,8 +20,8 @@ local updateVersionFile = new ActionStep {
 }
 
 name = "Build"
-on = new trigger.On {
-    push = new trigger.Push {
+on = new On {
+    push = new Push {
         branches = new Listing {
             "master" 
             "main"
