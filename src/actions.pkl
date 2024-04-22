@@ -15,9 +15,9 @@ defaults: Defaults?
 
 concurrency: Concurrency?
 
-jobs: Mapping<String(matches(validJobName)), Job>?
+jobs: Mapping<String(matches(constraints.validJobName)), Job>?
 
-typealias Permission = Mapping<ScopePermission, List<ScopePermissionOptions>> | GlobalPermission
+typealias Permission = Mapping<ScopePermission, ScopePermissionOptions> | GlobalPermission
 typealias ScopePermission = "actions" | "checks" | "contents" | "deployments" | "discussions" | "id-token" | "issues" 
     | "packages" | "pages" | "pull-requests" | "repository-projects" | "security-events" | "statuses"
 typealias ScopePermissionOptions = "read" | "write" | "none"
@@ -53,7 +53,7 @@ class Job {
     services: Mapping<String, ContainerConfig>?
     uses: String?((this == null).xor(steps == null))
     with: Mapping<String, Any>?((this != null).implies(uses != null))
-    secrets: Mapping<String, String>
+    secrets: Mapping<String, String>?
     steps: List<Step>?
 }
 
@@ -89,12 +89,12 @@ abstract class Step {
     id: String?
     name: String?
     `if`: String?
+    env: Mapping<String, Any>?
 }
 
 class ActionStep extends Step {
     uses: String
     with: Mapping<String, Any>?
-    env: Mapping<String, Any>?
 }
 
 class CommandStep extends Step {

@@ -24,9 +24,7 @@ on = new trigger.On {
 }
 
 permissions = new Mapping {
-    ["contents"] = List(
-        "write"
-    )
+    ["contents"] = "write"
 }
 
 jobs = new Mapping {
@@ -93,7 +91,7 @@ jobs = new Mapping {
         needs = List("version")
         `if` = "github.event_name != 'pull_request'"
         permissions = new Mapping {
-            ["contents"] = List("write")
+            ["contents"] = "write"
         }
         outputs = new Mapping {
             ["upload_url"] = "${{ steps.create_release.outputs.upload_url }}"
@@ -152,7 +150,7 @@ jobs = new Mapping {
             }
         }
         permissions = new Mapping {
-            ["contents"] = List("read")
+            ["contents"] = "read"
         }
         needs = List("version")
         steps = List(
