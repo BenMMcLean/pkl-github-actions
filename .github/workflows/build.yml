@@ -98,4 +98,32 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Update version numbers
+  upload-project:
+    runs-on: ubuntu-latest
+    needs: 
+      - version
+      - release
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install pkl
+      uses: pkl-community/setup-pkl@v0
+      with:
+        pkl-version: 0.25.3
+    - uses: DamianReeves/write-file-action@master
+      with:
+        path: .version
+        write-mode: overwrite
+        contents: ${{ needs.version.outputs.version }}
+    - name: Package Pkl
+      run: pkl project package src
+    - name: Upload Release Artifact
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG=pkl-github-actions@${{ needs.version.outputs.version }}
+        gh release upload v${{ needs.version.outputs.version }} .out/$TAG/*
+        gh release edit v${{ needs.version.outputs.version }} -t v${{ needs.version.outputs.version }}
 
