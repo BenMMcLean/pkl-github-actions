@@ -134,7 +134,7 @@ class On {
     registry_package: RegistryPackage?
     release: Release?
     repository_dispatch: RepositoryDispatch?
-    schedule: Schedule?
+    schedule: Listing<Schedule>?
     status: Status?
     watch: Watch?
     workflow_dispatch: WorkflowDispatch?
@@ -248,7 +248,7 @@ class RepositoryDispatch {
 }
 
 class Schedule {
-    cron: String(matches(constraints.cronMatcher))
+    cron: String
 }
 
 class Status {}
