@@ -64,7 +64,7 @@ class Environment {
 }
 
 class JobStrategy {
-    matrix: Mapping<String, Any>
+    matrix: Mapping<String, Any> | String
 }
 
 class Container {
