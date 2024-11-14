@@ -98,6 +98,26 @@ class ActionStep extends Step {
     with: Mapping<String, Any>?
 }
 
+function ActionStepFromYaml(yaml: Dynamic): ActionStep = 
+    let(map = yaml.toMap())
+    new ActionStep {
+        id = map.getOrNull("id")
+        name = map.getOrNull("name")
+        `if` = map.getOrNull("if")
+        env = map.getOrNull("env")
+        uses = map.getOrNull("uses")
+        with = 
+            let(_with = map.getOrNull("with")?.toMap())
+            if (_with != null)
+                new Mapping {
+                    for (key in _with.keys) {
+                        [key] = _with[key]
+                    }
+                }
+            else null
+    }
+
+
 class CommandStep extends Step {
     run: String
 }
