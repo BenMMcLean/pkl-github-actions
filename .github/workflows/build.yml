@@ -75,33 +75,6 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         tag: pkl-github-actions@${{ needs.version.outputs.version }}
-  version-update:
-    permissions:
-      contents: write
-    needs:
-    - version
-    - should-release
-    if: ${{ needs.should-release.outputs.proceed }}
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - uses: DamianReeves/write-file-action@master
-      with:
-        path: .version
-        write-mode: overwrite
-        contents: ${{ needs.version.outputs.version }}
-    - uses: jacobtomlinson/gha-find-replace@v3
-      with:
-        find: ${{ needs.version.outputs.current-version }}
-        replace: ${{ needs.version.outputs.version }}
-        regex: false
-        include: README.md
-    - uses: stefanzweifel/git-auto-commit-action@v5
-      with:
-        commit_message: Update version in documentation from ${{ needs.version.outputs.current-version }} to ${{ needs.version.outputs.version }}
   upload-project:
     permissions:
       contents: write

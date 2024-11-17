@@ -126,35 +126,6 @@ jobs = new Mapping {
             }
         }
     }
-    ["version-update"] = new Job {
-        needs = new Listing {
-            "version"
-            "should-release"
-        }
-        permissions = new Mapping {
-            ["contents"] = "write"
-        }
-        `if` = "${{ needs.should-release.outputs.proceed }}"
-        steps = new Listing {
-            checkout
-            updateVersionFile
-            new ActionStep {
-                uses = "jacobtomlinson/gha-find-replace@v3"
-                with = new Mapping {
-                    ["find"] = "${{ needs.version.outputs.current-version }}"
-                    ["replace"] = "${{ needs.version.outputs.version }}"
-                    ["regex"] = false
-                    ["include"] = "README.md"
-                }
-            }
-            new ActionStep {
-                uses = "stefanzweifel/git-auto-commit-action@v5"
-                with = new Mapping {
-                    ["commit_message"] = "Update version in documentation from ${{ needs.version.outputs.current-version }} to ${{ needs.version.outputs.version }}"
-                }
-            }
-        }
-    }
     ["upload-project"] = new Job {
         needs = new Listing {
             "version"
