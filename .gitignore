@@ -4,3 +4,8 @@ test.yml
 cl.emilym.githubactions/common.pkl
 
 cl.emilym.githubactions/test.pkl
+
+.out/
+.DS_Store
+
+examples/build-sonatype.yml

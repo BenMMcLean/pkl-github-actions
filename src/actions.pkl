@@ -1,0 +1,288 @@
+open module actions
+
+import "constraints.pkl"
+
+name: String
+
+`run-name`: String?
+
+on: On?
+
+permissions: Permission?
+
+env: Mapping<String, Any>?
+
+defaults: Defaults?
+
+concurrency: Concurrency?
+
+jobs: Mapping<String(matches(constraints.validJobName)), Job>?
+
+typealias Permission = Mapping<ScopePermission, ScopePermissionOptions> | GlobalPermission
+typealias ScopePermission = "actions" | "checks" | "contents" | "deployments" | "discussions" | "id-token" | "issues" 
+    | "packages" | "pages" | "pull-requests" | "repository-projects" | "security-events" | "statuses"
+typealias ScopePermissionOptions = "read" | "write" | "none"
+typealias GlobalPermission = "read-all" | "write-all"
+typealias Shell = "bash" | "pwsh" | "python" | "sh" | "cmd" | "powershell"
+typealias Defaults = Mapping<String, Any> | DefaultRun
+
+class DefaultRun {
+    shell: Shell?
+    `working-directory`: String?
+}
+
+class Concurrency {
+    group: String
+    `cancel-in-progress`: Boolean
+}
+
+class Job {
+    name: String?
+    permissions: Permission?
+    needs: Listing<String>?
+    `if`: String?
+    `runs-on`: String = "ubuntu-latest"
+    environment: (String | Environment)?
+    concurrency: Concurrency?
+    outputs: Mapping<String, String>?
+    env: Mapping<String, Any>?
+    defaults: Defaults?
+    `timeout-minutes`: Int?
+    strategy: JobStrategy?
+    `continue-on-error`: Boolean?
+    container: Container?
+    services: Mapping<String, ContainerConfig>?
+    uses: String?((this == null).xor(steps == null))
+    with: Mapping<String, Any>?((this != null).implies(uses != null))
+    secrets: Mapping<String, String>?
+    steps: Listing<Step>?
+}
+
+class Environment {
+    name: String
+    url: String
+}
+
+class JobStrategy {
+    matrix: Mapping<String, Any> | String
+}
+
+class Container {
+    `runs-on`: String?
+    container: String | ContainerConfig
+}
+
+class ContainerConfig {
+    image: String
+    env: Mapping<String, Any>?
+    ports: Listing<String>?
+    volumes: Listing<String>?
+    options: Listing<String>?
+    credentials: Credentials?
+}
+
+class Credentials {
+    username: String
+    password: String
+}
+
+abstract class Step {
+    id: String?
+    name: String?
+    `if`: String?
+    env: Mapping<String, Any>?
+}
+
+class ActionStep extends Step {
+    uses: String
+    with: Mapping<String, Any>?
+}
+
+function ActionStepFromYaml(yaml: Dynamic): ActionStep = 
+    let(map = yaml.toMap())
+    new ActionStep {
+        id = map.getOrNull("id")
+        name = map.getOrNull("name")
+        `if` = map.getOrNull("if")
+        env = map.getOrNull("env")
+        uses = map.getOrNull("uses")
+        with = 
+            let(_with = map.getOrNull("with")?.toMap())
+            if (_with != null)
+                new Mapping {
+                    for (key in _with.keys) {
+                        [key] = _with[key]
+                    }
+                }
+            else null
+    }
+
+
+class CommandStep extends Step {
+    run: String
+}
+
+local typealias crud = "created" | "edited" | "deleted"
+
+class On {
+    branch_protection_rule: BranchProtectionRule?
+    check_run: CheckRun?
+    check_suite: CheckSuite?
+    create: Create?
+    `delete`: Delete?
+    deployment: Deployment?
+    deployment_status: DeploymentStatus?
+    discussion: Discussion?
+    discussion_comment: DiscussionComment?
+    fork: Fork?
+    gollum: Gollum?
+    issue_comment: IssueComment?
+    issues: Issues?
+    label: Label?
+    merge_group: MergeGroup?
+    milestone: Milestone?
+    page_build: PageBuild?
+    project: Project?
+    project_card: ProjectCard?
+    project_column: ProjectColumn?
+    public: Public?
+    pull_request: PullRequest?
+    pull_request_review: PullRequestReview?
+    pull_request_review_comment: PullRequestReviewComment?
+    pull_request_target: PullRequestTarget?
+    push: Push?
+    registry_package: RegistryPackage?
+    release: Release?
+    repository_dispatch: RepositoryDispatch?
+    schedule: Listing<Schedule>?
+    status: Status?
+    watch: Watch?
+    workflow_dispatch: WorkflowDispatch?
+    workflow_run: WorkflowRun?
+}
+
+class BranchProtectionRule {
+    types: Listing<crud>?
+}
+
+class CheckRun {
+    types: Listing<"created" | "rerequested" | "completed" | "requested_action">?
+}
+
+class CheckSuite {
+    types: Listing<"completed">?
+}
+
+class Create {}
+
+class Delete {}
+
+class Deployment {}
+
+class DeploymentStatus {}
+
+class Discussion {
+    types: Listing<crud | "transferred" | "pinned" | "unpinned" | "labeled" | "unlabeled" | "locked" | "unlocked" | "category_changed" | "answered" | "unanswered">?
+}
+
+class DiscussionComment {
+    types: Listing<crud>?
+}
+
+class Fork {}
+
+class Gollum {}
+
+class IssueComment {
+    types: Listing<crud>?
+}
+
+class Issues {
+    types: Listing<"opened" | "edited" | "deleted" | "transferred" | "pinned" | "unpinned" | "closed" | "reopened" | "assigned" | "unassigned" | "labeled" | "locked" | "unlocked" | "milestoned" | "demilestoned">?
+}
+
+class Label {
+    types: Listing<crud>?
+}
+
+class MergeGroup {
+    types: Listing<"checks_requested">?
+}
+
+class Milestone {
+    types: Listing<crud | "opened" | "closed">?
+}
+
+class PageBuild {}
+
+class Project {
+    types: Listing<crud | "closed" | "reopened">?
+}
+
+class ProjectCard {
+    types: Listing<crud | "moved" | "converted">?
+}
+
+class ProjectColumn {
+    types: Listing<crud | "moved">?
+}
+
+class Public {}
+
+class PullRequest {
+    types: Listing<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "locked" | "unlocked" | "enqueued" | "dequeued" | "milestoned" | "demilestoned" | "ready_for_review" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">?
+    branches: Listing<String>?
+    paths: Listing<String>?
+}
+
+class PullRequestReview {
+    types: Listing<"submitted" | "edited" | "dismissed">
+}
+
+class PullRequestReviewComment {
+    types: Listing<crud>
+}
+
+class PullRequestTarget {
+    types: Listing<"assigned" | "unassigned" | "labeled" | "unlabeled" | "opened" | "edited" | "closed" | "reopened" | "synchronize" | "converted_to_draft" | "ready_for_review" | "locked" | "unlocked" | "review_requested" | "review_request_removed" | "auto_merge_enabled" | "auto_merge_disabled">
+    branches: Listing<String>?
+    paths: Listing<String>?
+}
+
+class Push {
+    branches: Listing<String>?
+    paths: Listing<String>?
+    tags: Listing<String>?
+}
+
+class RegistryPackage {
+    types: Listing<"published" | "updated">?
+}
+
+class Release {
+    types: Listing<crud | "published" | "unpublished" | "released" | "prereleased">?
+}
+
+class RepositoryDispatch {
+    types: Listing<String>?
+}
+
+class Schedule {
+    cron: String
+}
+
+class Status {}
+
+class Watch {
+    types: Listing<"started">?
+}
+
+class WorkflowDispatch {
+    inputs: Mapping<String, Any>?
+}
+
+class WorkflowRun {
+    types: Listing<"completed" | "requested" | "in_progress">?
+    workflows: Listing<String>?
+    branches: Listing<String>
+}

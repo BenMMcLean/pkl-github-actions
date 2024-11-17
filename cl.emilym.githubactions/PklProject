@@ -1,5 +1,0 @@
-amends "../basePklProject.pkl"
-
-package {
-  version = "1.1.1"
-}

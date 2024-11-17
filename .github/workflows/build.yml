@@ -1,0 +1,106 @@
+name: Build
+'on':
+  push:
+    branches:
+    - master
+    - main
+    - develop
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      current-version: ${{ env.CURRENT_VERSION }}
+      version: ${{ steps.gitversion.outputs.semVer }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Get current Pkl version
+      run: |-
+        VER=$(cat .version)
+        echo "CURRENT_VERSION=$VER" >> $GITHUB_ENV
+    - name: Install gitversion
+      uses: gittools/actions/gitversion/setup@v3.0.0
+      with:
+        versionSpec: 5.x
+    - id: gitversion
+      name: Use gitversion
+      uses: gittools/actions/gitversion/execute@v3.0.0
+      with:
+        useConfigFile: true
+        configFilePath: ./gitversion.yml
+    - name: Display version
+      run: 'echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"'
+  should-release:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.release.outputs.proceed && github.event_name != 'pull_request' }}
+    steps:
+    - id: release
+      uses: phish108/release-check@1.0.15
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        protected-paths: |-
+          README.md
+          .version
+  release:
+    permissions:
+      contents: write
+    needs:
+    - version
+    - should-release
+    if: ${{ needs.should-release.outputs.proceed }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Create tag for release
+      uses: rickstaa/action-create-tag@v1
+      with:
+        tag: v${{ needs.version.outputs.version }}
+    - name: Create Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ needs.version.outputs.version }}
+        name: Release ${{ needs.version.outputs.version }}
+        draft: false
+        prerelease: ${{ github.ref == 'refs/heads/develop' }}
+    - name: Add package specific tag
+      uses: pxpm/github-tag-action@1.0.1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        tag: pkl-github-actions@${{ needs.version.outputs.version }}
+  upload-project:
+    permissions:
+      contents: write
+    needs:
+    - version
+    - release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Install Pkl
+      uses: pkl-community/setup-pkl@v0
+      with:
+        pkl-version: 0.25.3
+    - uses: DamianReeves/write-file-action@master
+      with:
+        path: .version
+        write-mode: overwrite
+        contents: ${{ needs.version.outputs.version }}
+    - name: Package Pkl
+      run: pkl project package src
+    - env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |-
+        TAG=pkl-github-actions@${{ needs.version.outputs.version }}
+        gh release upload v${{ needs.version.outputs.version }} .out/$TAG/*
+        gh release edit v${{ needs.version.outputs.version }} -t v${{ needs.version.outputs.version }}

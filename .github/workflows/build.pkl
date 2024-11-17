@@ -1,0 +1,163 @@
+amends "../../src/actions.pkl"
+
+local packageName = "pkl-github-actions"
+
+local checkout = new ActionStep {
+    name = "Checkout code"
+    uses = "actions/checkout@v4"
+    with = new Mapping {
+        ["fetch-depth"] = 0
+    }
+}
+
+local updateVersionFile = new ActionStep {
+    uses = "DamianReeves/write-file-action@master"
+    with = new Mapping {
+        ["path"] = ".version"
+        ["write-mode"] = "overwrite"
+        ["contents"] = "${{ needs.version.outputs.version }}"
+    }
+}
+
+name = "Build"
+on = new On {
+    push = new Push {
+        branches = new Listing {
+            "master" 
+            "main"
+            "develop"
+        }
+    }
+}
+
+jobs = new Mapping {
+    ["version"] = new Job {
+        outputs = new Mapping {
+            ["current-version"] = "${{ env.CURRENT_VERSION }}"
+            ["version"] = "${{ steps.gitversion.outputs.semVer }}"
+        }
+        steps = new Listing {
+            checkout
+            new CommandStep {
+                name = "Get current Pkl version"
+                run = """
+                VER=$(cat .version)
+                echo "CURRENT_VERSION=$VER" >> $GITHUB_ENV
+                """
+            }
+            new ActionStep {
+                name = "Install gitversion"
+                uses = "gittools/actions/gitversion/setup@v3.0.0"
+                with = new Mapping {
+                    ["versionSpec"] = "5.x"
+                }
+            }
+            new ActionStep {
+                id = "gitversion"
+                name = "Use gitversion"
+                uses = "gittools/actions/gitversion/execute@v3.0.0"
+                with = new Mapping {
+                    ["useConfigFile"] = true
+                    ["configFilePath"] = "./gitversion.yml"
+                }
+            }
+            new CommandStep {
+                name = "Display version"
+                run = "echo \"SemVer: ${{ steps.gitversion.outputs.semVer }}\""
+            }
+        }
+    }
+    ["should-release"] = new Job {
+        outputs = new Mapping {
+            ["proceed"] = "${{ steps.release.outputs.proceed && github.event_name != 'pull_request' }}"
+        }
+        steps = new Listing {
+            new ActionStep {
+                id = "release"
+                uses = "phish108/release-check@1.0.15"
+                with = new Mapping {
+                    ["github-token"] = "${{ secrets.GITHUB_TOKEN }}"
+                    ["protected-paths"] = """
+                    README.md
+                    .version
+                    """
+                }
+            }
+        }
+    }
+    ["release"] = new Job {
+        needs = new Listing {
+            "version"
+            "should-release"
+        }
+        permissions = new Mapping {
+            ["contents"] = "write"
+        }
+        `if` = "${{ needs.should-release.outputs.proceed }}"
+        steps = new Listing {
+            checkout
+            new ActionStep {
+                name = "Create tag for release"
+                uses = "rickstaa/action-create-tag@v1"
+                with = new Mapping {
+                    ["tag"] = "v${{ needs.version.outputs.version }}"
+                }
+            }
+            new ActionStep {
+                name = "Create Release"
+                uses = "softprops/action-gh-release@v2"
+                env = new Mapping {
+                    ["GITHUB_TOKEN"] = "${{ secrets.GITHUB_TOKEN }}"
+                }
+                with = new Mapping {
+                    ["tag_name"] = "v${{ needs.version.outputs.version }}"
+                    ["name"] = "Release ${{ needs.version.outputs.version }}"
+                    ["draft"] = false
+                    ["prerelease"] = "${{ github.ref == 'refs/heads/develop' }}"
+                }
+            }
+            new ActionStep {
+                name = "Add package specific tag"
+                uses = "pxpm/github-tag-action@1.0.1"
+                with = new Mapping {
+                    ["repo-token"] = "${{ secrets.GITHUB_TOKEN }}"
+                    ["tag"] = "\(packageName)@${{ needs.version.outputs.version }}"
+                }
+            }
+        }
+    }
+    ["upload-project"] = new Job {
+        needs = new Listing {
+            "version"
+            "release"
+        }
+        permissions = new Mapping {
+            ["contents"] = "write"
+        }
+        steps = new Listing {
+            checkout
+            new ActionStep {
+                name = "Install Pkl"
+                uses = "pkl-community/setup-pkl@v0"
+                with = new Mapping {
+                    ["pkl-version"] = "0.25.3"
+                }
+            }
+            updateVersionFile
+            new CommandStep {
+                name = "Package Pkl"
+                run = "pkl project package src"
+            }
+            new CommandStep {
+                env = new Mapping {
+                    ["GITHUB_TOKEN"] = "${{ secrets.GITHUB_TOKEN }}"
+                }
+                run = """
+                TAG=pkl-github-actions@${{ needs.version.outputs.version }}
+                gh release upload v${{ needs.version.outputs.version }} .out/$TAG/*
+                gh release edit v${{ needs.version.outputs.version }} -t v${{ needs.version.outputs.version }}
+                """
+            }
+        }
+    }
+}
