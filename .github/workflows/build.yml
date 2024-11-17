@@ -13,7 +13,7 @@ jobs:
       version: ${{ steps.gitversion.outputs.semVer }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Get current Pkl version
@@ -21,12 +21,12 @@ jobs:
         VER=$(cat .version)
         echo "CURRENT_VERSION=$VER" >> $GITHUB_ENV
     - name: Install gitversion
-      uses: gittools/actions/gitversion/setup@v0.9.6
+      uses: gittools/actions/gitversion/setup@v3.0.0
       with:
         versionSpec: 5.x
     - id: gitversion
       name: Use gitversion
-      uses: gittools/actions/gitversion/execute@v0.9.6
+      uses: gittools/actions/gitversion/execute@v3.0.0
       with:
         useConfigFile: true
         configFilePath: ./gitversion.yml
@@ -54,20 +54,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
+    - name: Create tag for release
+      uses: rickstaa/action-create-tag@v1
+      with:
+        tag: v${{ needs.version.outputs.version }}
     - name: Create Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ needs.version.outputs.version }}
-        release_name: Release ${{ needs.version.outputs.version }}
+        name: Release ${{ needs.version.outputs.version }}
         draft: false
         prerelease: ${{ github.ref == 'refs/heads/develop' }}
     - name: Add package specific tag
-      uses: tvdias/github-tagger@v0.0.1
+      uses: pxpm/github-tag-action@1.0.1
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         tag: pkl-github-actions@${{ needs.version.outputs.version }}
@@ -81,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - uses: DamianReeves/write-file-action@master
@@ -107,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Install Pkl
